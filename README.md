@@ -24,7 +24,6 @@ var webFontsBase64 = require('gulp-google-fonts-base64-css');
 gulp.task('fonts', function () {
 	return gulp.src('./fonts.list')
       .pipe(webFontsBase64())
-      .pipe(gulp.dest('out/fonts'))
       .pipe(concat('web-fonts.css'))
       .pipe(cssmin())
       .pipe(gulp.dest('./css'));
