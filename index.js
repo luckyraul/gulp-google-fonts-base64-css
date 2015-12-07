@@ -2,7 +2,6 @@ var through = require('through2');
 var gutil = require('gulp-util');
 var http = require('http');
 var path = require('path');
-var googleWebFonts = require('gulp-google-webfonts');
 var async = require('async');
 var File = require('vinyl');
 

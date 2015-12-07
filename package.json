@@ -1,6 +1,6 @@
 {
     "name": "gulp-google-fonts-base64-css",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "Gulp plugin to generate css files with Base64 encoded font data from Google Fonts",
     "main": "index.js",
     "scripts": {
