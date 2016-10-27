@@ -14,8 +14,6 @@ var defaultOptions = {
     outBaseDir: ''
 };
 
-var otherCss = '';
-
 function verbose(msg) {
     if (debug) {
         process.stderr.write(msg + '\n');
@@ -30,8 +28,7 @@ var template = [
     '  font-weight: {{fontWeight}};\n',
     '  src: local("{{fontName}}"),\n',
     '       url("data:application/x-font-{{fontType}};base64,{{base64}}") format("{{fontType}}");\n',
-    '}',
-    '{{otherCss}}'
+    '}'
 ].join('');
 module.exports = function() {
     'use strict';
@@ -135,25 +132,20 @@ module.exports = function() {
         }
 
         function parseCss(css, next) {
-            css = css.replace(/\/\*[\s\S]+\*\//g, '');
             css = css.replace(/\s*([{}:;\(\)])\s*/g, '$1');
             if (css.substr(0, 2) === '<!') {
                 return next(new Error('Failed to retrieve webfont CSS'));
             }
-            var rx = /@font-face{font-family:'([^']+)';font-style:(\w+);font-weight:(\w+);src:[^;]*url\(([^)]+\.(woff))\)[^;]*;}(\.(.+)|())/g;
+            var rx = /@font-face{font-family:'([^']+)';font-style:(\w+);font-weight:(\w+);src:[^;]*url\(([^)]+\.woff)\)[^;]*;}/g;
             var requests = [];
-
-            css.replace(rx, function(block, family, style, weight, url, fontType, other) {
-                otherCss = ( other + '\n' );
-                var name = [family, style, weight].join('-') + '.' + fontType;
-
+            css.replace(rx, function(block, family, style, weight, url) {
+                var name = [family, style, weight].join('-') + '.woff';
                 requests.push({
                     family: family,
                     style: style,
                     weight: weight,
                     name: name.replace(/\s/g, '_'),
-                    url: url,
-                    other: other
+                    url: url
                 });
             });
             generateFontCss(requests, next);
@@ -162,18 +154,15 @@ module.exports = function() {
         function generateFontCss(requests, next) {
             var template = [
                 '@font-face {',
-                '   font-family: \'$family\';',
-                '   font-style: $style;',
-                '   font-weight: $weight;',
-                '   src: url($name) format(\'woff\');',
-                '}',
-                '$other'
+                '	font-family: \'$family\';',
+                '	font-style: $style;',
+                '	font-weight: $weight;',
+                '	src: url($name) format(\'woff\');',
+                '}'
             ].join('\n');
             var css = requests
                 .map(makeFontFace)
                 .join('\n\n');
-
-
             writeFile(path.join(options.cssDir, options.cssFilename), new Buffer(css), function(err) {
                 next(err, requests);
             });
@@ -239,7 +228,6 @@ module.exports = function() {
             //gutil.log(filename);
             var regexResult = filename.match(/(.+).(woff|woff2)\b/);
             if (regexResult) {
-                // gutil.log(regexResult)
                 var fileName = regexResult[1];
                 var fontType = regexResult[2];
                 var fontData = fileName.split('-');
@@ -253,13 +241,10 @@ module.exports = function() {
                     .replace(/{{fontType}}/g, fontType)
                     .replace(/{{fontStyle}}/g, fontStyle)
                     .replace(/{{fontWeight}}/g, fontWeight)
-                    .replace('{{base64}}', base64)
-                    .replace('{{otherCss}}', otherCss);
+                    .replace('{{base64}}', base64);
                 var output = new gutil.File({
                     path: fileName + '.css'
                 });
-
-               
 
                 output.contents = new Buffer(tmpl);
                 //gutil.log(tmpl);
